@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 3.6)
 project(garbanzo LANGUAGES CXX)
-include_directories(/usr/include/ImageMagick-7)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -19,4 +18,6 @@ target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -pedantic-errors)
 #target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=address,undefined,leak)
 #target_link_options(${PROJECT_NAME} PRIVATE -fsanitize=address,undefined,leak)
 
+include(cmake/bcrypt.cmake)
 include(cmake/drogon.cmake)
+include(cmake/dotenv.cmake)
