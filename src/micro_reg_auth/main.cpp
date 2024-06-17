@@ -22,6 +22,13 @@ int32_t main() {
             HandlerRegister(req, std::move(callback), dbClient);
         },
         {drogon::Post});
+
+    drogon::app().registerHandler(
+        "/sign_in",
+        [dbClient](const drogon::HttpRequestPtr &req, std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
+            HandlerAuth(req, std::move(callback), dbClient);
+        },
+        {drogon::Post});
     
     std::cout << "Server started on port " + SERVER_ADDRESS << std::endl;
     drogon::app().addListener("0.0.0.0", stoi(SERVER_ADDRESS)).run();
