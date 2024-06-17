@@ -8,7 +8,17 @@ create table if not exists users (
 
 create table if not exists tokens (
     user_id bigint,
-    access_token text,
-    refresh_token text
+    refresh_token text,
+    device_id bigint
 );
 
+create table if not exists item (
+    id serial primary key,
+    title text,
+    description text,
+    weight bigint,
+    cost bigint,
+    rating bigint,
+    in_cart boolean,
+    in_favourites boolean
+);

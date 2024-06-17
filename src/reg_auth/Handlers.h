@@ -93,13 +93,14 @@ const drogon::orm::DbClientPtr &dbClient) {
         (*json)["login"].asString(),
         (*json)["email"].asString(),
         (*json)["phone"].asString(),
-        (*json)["password"].asString()
+        (*json)["password"].asString(),
+        (*json)["deviceId"].asString()
     );
 
     auto resp = drogon::HttpResponse::newHttpResponse();
-
-
+    
     int status = user_validation::validate_auth_user(authUser, dbClient); // 0 - internal error, 0 - unauth, 1 - OK, 2 - bad request
+
     if (status == -1) {
         resp->setStatusCode(drogon::k401Unauthorized);
         resp->setBody("Wrong login or password field");
@@ -109,6 +110,7 @@ const drogon::orm::DbClientPtr &dbClient) {
 
     if (status == 0) {
         resp->setStatusCode(drogon::k500InternalServerError);
+        resp->setBody("aboba");
         callback(resp);
         return;
     }
@@ -121,15 +123,23 @@ const drogon::orm::DbClientPtr &dbClient) {
     }
 
     auto row = dbClient->execSqlSync("select id from users where login=$1", authUser.Login);
-    
+
     std::string user_id = row[0][0].as<std::string>();
 
-    std::string access_token = generate_jwt_access_token(user_id);
-    std::string refresh_token = generate_jwt_refresh_token(user_id);
+    std::string access_token = generate_jwt_access_token();
+    std::string refresh_token = generate_jwt_refresh_token(user_id, authUser.DeviceId);
 
-    dbClient->execSqlSync("insert into tokens (user_id, access_token, refresh_token) "
-        "values ($1, $2, $3)", user_id, bcrypt::generateHash(access_token), bcrypt::generateHash(refresh_token));
+    row = dbClient->execSqlSync("select exists(select 1 from tokens where user_id=$1 and device_id=$2)", 
+        user_id, authUser.DeviceId);
 
+    if (row[0][0].as<bool>()) {
+        dbClient->execSqlSync("update tokens set refresh_token=$1 where user_id=$2 and device_id=$3", 
+            bcrypt::generateHash(refresh_token), user_id, authUser.DeviceId);
+    }
+    else {
+        dbClient->execSqlSync("insert into tokens (user_id, refresh_token, device_id) "
+            "values ($1, $2, $3)", user_id, bcrypt::generateHash(refresh_token), authUser.DeviceId);
+    }
 
     Json::Value jTokens;
     jTokens["access_token"] = access_token;
