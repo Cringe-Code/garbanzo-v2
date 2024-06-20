@@ -4,7 +4,10 @@
 #include <functional>
 #include <ostream>
 #include "Handlers.h"
+#include "drogon/HttpResponse.h"
 #include "drogon/HttpTypes.h"
+#include "drogon/utils/FunctionTraits.h"
+#include "items/Handlers.h"
 #include <dotenv.h>
 #include <string>
 
@@ -21,15 +24,34 @@ int32_t main() {
         [dbClient](const drogon::HttpRequestPtr &req, std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
             HandlerRegister(req, std::move(callback), dbClient);
         },
-        {drogon::Post});
+        {drogon::Post}
+    );
 
     drogon::app().registerHandler(
         "/sign_in",
         [dbClient](const drogon::HttpRequestPtr &req, std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
             HandlerAuth(req, std::move(callback), dbClient);
         },
-        {drogon::Post});
+        {drogon::Post}
+    );
     
+    drogon::app().registerHandler(
+        "/item/{item_name}",
+        [dbClient](const drogon::HttpRequestPtr &req, std::function<void(const drogon::HttpResponsePtr &)> &&callback, 
+            std::string item_id) {
+            HandlerGetItemMini(req, std::move(callback), dbClient, item_id);
+        },
+        {drogon::Get}
+    );
+
+    drogon::app().registerHandler(
+        "/test",
+        [dbClient](const drogon::HttpRequestPtr &req, std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
+            HandlerAddItem_temporary(req, std::move(callback), dbClient);
+        },
+        {drogon::Post}
+    );
+
     std::cout << "Server started on port " + SERVER_ADDRESS << std::endl;
     drogon::app().addListener("0.0.0.0", stoi(SERVER_ADDRESS)).run();
 }

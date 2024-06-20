@@ -13,12 +13,11 @@ create table if not exists tokens (
 );
 
 create table if not exists item (
-    id serial primary key,
+    id text primary key,
     title text,
+    preview_link text,
     description text,
     weight bigint,
     cost bigint,
-    rating bigint,
-    in_cart boolean,
-    in_favourites boolean
+    rating bigint
 );
