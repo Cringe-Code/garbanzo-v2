@@ -3,13 +3,16 @@
 #include <drogon/orm/DbClient.h>
 #include <functional>
 #include <ostream>
-#include "Handlers.h"
+#include "Base.h"
+#include "reg_auth/Handlers.h"
 #include "drogon/HttpResponse.h"
 #include "drogon/HttpTypes.h"
 #include "drogon/utils/FunctionTraits.h"
 #include "items/Handlers.h"
+#include <drogon/CacheMap.h>
 #include <dotenv.h>
 #include <string>
+#include "Cache.h"
 
 int32_t main() {
     dotenv::init();
@@ -19,35 +22,37 @@ int32_t main() {
 
     auto dbClient = drogon::orm::DbClient::newPgClient(POSTGRES_CONN, 1);
     
+    MyCache<Item> cache(100);
+    
     drogon::app().registerHandler(
         "/register",
-        [dbClient](const drogon::HttpRequestPtr &req, std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
-            HandlerRegister(req, std::move(callback), dbClient);
+        [&dbClient](const drogon::HttpRequestPtr &req, std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
+            RegAuthHandler::HandlerRegister(req, std::move(callback), dbClient);
         },
         {drogon::Post}
     );
 
     drogon::app().registerHandler(
         "/sign_in",
-        [dbClient](const drogon::HttpRequestPtr &req, std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
-            HandlerAuth(req, std::move(callback), dbClient);
+        [&dbClient](const drogon::HttpRequestPtr &req, std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
+            RegAuthHandler::HandlerAuth(req, std::move(callback), dbClient);
         },
         {drogon::Post}
     );
     
     drogon::app().registerHandler(
         "/item/{item_name}",
-        [dbClient](const drogon::HttpRequestPtr &req, std::function<void(const drogon::HttpResponsePtr &)> &&callback, 
+        [&dbClient](const drogon::HttpRequestPtr &req, std::function<void(const drogon::HttpResponsePtr &)> &&callback, 
             std::string item_id) {
-            HandlerGetItemMini(req, std::move(callback), dbClient, item_id);
+            ItemHandler::HandlerGetItemMini(req, std::move(callback), dbClient, item_id);
         },
         {drogon::Get}
     );
 
     drogon::app().registerHandler(
         "/test",
-        [dbClient](const drogon::HttpRequestPtr &req, std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
-            HandlerAddItem_temporary(req, std::move(callback), dbClient);
+        [&dbClient](const drogon::HttpRequestPtr &req, std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
+            ItemHandler::HandlerAddItem_temporary(req, std::move(callback), dbClient);
         },
         {drogon::Post}
     );

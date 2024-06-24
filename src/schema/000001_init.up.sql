@@ -3,7 +3,8 @@ create table if not exists users (
     login text,
     phone text,
     email text,
-    hash_password text
+    hash_password text,
+    is_admin boolean
 );
 
 create table if not exists tokens (

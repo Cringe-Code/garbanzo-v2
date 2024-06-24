@@ -1,12 +1,14 @@
 #pragma once
 
+#include <drogon/drogon.h>
 #include <cstdint>
 #include <iostream>
 
 
 inline const std::string SECRET_KEY = "jfwheofiehifwoef";
 
-struct User {
+class User {
+public:
     std::string Login;
     std::string Email;
     std::string Phone;
@@ -16,6 +18,25 @@ struct User {
     User(std::string login = "", std::string email = "", std::string phone = "", std::string password = "", std::string deviceId = "")
     : Login(std::move(login)), Email(std::move(email)), Phone(std::move(phone)), Password(std::move(password)), DeviceId(std::move(deviceId))
     {}  
+
+    bool isAdmin() {
+        return IsAdmin;
+    }
+
+    bool updAdmin(const drogon::orm::DbClientPtr &dbClient) {
+        try {
+            dbClient->execSqlSync("update users set is_admin=$1", !IsAdmin);
+        }
+        catch (drogon::orm::DrogonDbException &e) {
+            std::cout << e.base().what() << std::endl;
+            return false;
+        }
+        
+        return true;
+    }
+
+private:
+    bool IsAdmin;
 };
 
 struct Item {

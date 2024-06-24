@@ -4,10 +4,8 @@
 #include <string>
 #include "Base.h"
 #include "bcrypt.h"
-#include "drogon/HttpAppFramework.h"
 #include "drogon/orm/DbClient.h"
 #include "drogon/orm/Exception.h"
-#include "drogon/utils/FunctionTraits.h"
 #include <regex>
 
 namespace user_validation {
