@@ -15,6 +15,7 @@
 #include "Cache.h"
 
 int32_t main() {
+
     dotenv::init();
     
     const std::string POSTGRES_CONN = std::getenv("POSTGRES_CONN");
@@ -22,7 +23,7 @@ int32_t main() {
 
     auto dbClient = drogon::orm::DbClient::newPgClient(POSTGRES_CONN, 1);
     
-    MyCache<Item> cache(100);
+    MyCache<Item> itemCache(100);
     
     drogon::app().registerHandler(
         "/register",
@@ -42,9 +43,9 @@ int32_t main() {
     
     drogon::app().registerHandler(
         "/item/{item_name}",
-        [&dbClient](const drogon::HttpRequestPtr &req, std::function<void(const drogon::HttpResponsePtr &)> &&callback, 
+        [&dbClient, &itemCache](const drogon::HttpRequestPtr &req, std::function<void(const drogon::HttpResponsePtr &)> &&callback, 
             std::string item_id) {
-            ItemHandler::HandlerGetItemMini(req, std::move(callback), dbClient, item_id);
+            ItemHandler::HandlerGetItemMini(req, std::move(callback), dbClient, item_id, itemCache);
         },
         {drogon::Get}
     );

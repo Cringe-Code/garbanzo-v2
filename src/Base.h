@@ -52,4 +52,17 @@ struct Item {
         : Title(std::move(title)), Description(std::move(description)), PreviewLink(std::move(previewLink)),
         Weight(std::move(weight)), Cost(std::move(cost)), Rating(std::move(rating))
     {} 
+
+    // Item& operator =(const Item &item) {
+    //     if (&item != this) {
+    //         Title = item.Title;
+    //         Description = item.Description;
+    //         PreviewLink = item.PreviewLink;
+    //         Weight = item.Weight;
+    //         Cost = item.Cost;
+    //         Rating = item.Rating;
+    //     }
+    //     return *this;
+    // }
+
 };

@@ -15,7 +15,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE src)
 target_compile_options(${PROJECT_NAME} PRIVATE -O0 -g)
 target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -pedantic-errors)
 
-#target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=address,undefined,leak)
+# target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=address,undefined,leak)
 #target_link_options(${PROJECT_NAME} PRIVATE -fsanitize=address,undefined,leak)
 
 include(cmake/bcrypt.cmake)

@@ -1,6 +1,7 @@
 #include "Base.h"
 #include <drogon/drogon.h>
 #include <json/value.h>
+#include "Cache.h"
 #include "Tokens.h"
 #include "drogon/HttpResponse.h"
 #include "drogon/HttpTypes.h"
@@ -10,57 +11,75 @@
 
 void ItemHandler::HandlerGetItemMini (const drogon::HttpRequestPtr &req, 
     std::function<void (const drogon::HttpResponsePtr &)> &&callback,
-const drogon::orm::DbClientPtr &dbClient, const std::string item_id) {
+const drogon::orm::DbClientPtr &dbClient, const std::string &item_id, MyCache<Item> &itemCache) {
 
     auto itemId = item_id;
 
     auto resp = drogon::HttpResponse::newHttpResponse();
 
-    
+    if (itemCache.exists(item_id)) {
+        Item item = itemCache.get(item_id);
 
-    dbClient->execSqlAsync("select title, preview_link, weight, cost, rating from item where id=$1" , 
-        [resp, callback](const drogon::orm::Result &r) {
-            if (r.size() > 0) {
+        Json::Value jItem;
+        jItem["title"] = item.Title,
+        jItem["previewLink"] = item.PreviewLink,
+        jItem["weight"] = item.Weight,
+        jItem["cost"] = item.Cost,
+        jItem["rating"] = item.Rating;
 
-                Item item (
-                    r[0][0].as<std::string>(),
-                    "",
-                    r[0][1].as<std::string>(),
-                    r[0][2].as<int64_t>(),
-                    r[0][3].as<int64_t>(),
-                    r[0][4].as<int64_t>()
-                );
+        resp->setStatusCode(drogon::k200OK);
+        resp->setContentTypeCode(drogon::CT_APPLICATION_JSON);
+        resp->setBody(jItem.toStyledString());
+        callback(resp);
+        return;
+    }
+    else {
+        dbClient->execSqlAsync("select title, preview_link, weight, cost, rating from item where id=$1" , 
+            [resp, callback, &itemCache, item_id](const drogon::orm::Result &r) {
+                if (r.size() > 0) {
 
-                Json::Value jItem;
-                jItem["title"] = item.Title,
-                jItem["previewLink"] = item.PreviewLink,
-                jItem["weight"] = item.Weight,
-                jItem["cost"] = item.Cost,
-                jItem["rating"] = item.Rating;
+                    Item item (
+                        r[0][0].as<std::string>(),
+                        "",
+                        r[0][1].as<std::string>(),
+                        r[0][2].as<int64_t>(),
+                        r[0][3].as<int64_t>(),
+                        r[0][4].as<int64_t>()
+                    );
+                    
+                    itemCache.insert(item, item_id);
 
-                resp->setStatusCode(drogon::k200OK);
-                resp->setContentTypeCode(drogon::CT_APPLICATION_JSON);
-                resp->setBody(jItem.toStyledString());
+                    Json::Value jItem;
+                    jItem["title"] = item.Title,
+                    jItem["previewLink"] = item.PreviewLink,
+                    jItem["weight"] = item.Weight,
+                    jItem["cost"] = item.Cost,
+                    jItem["rating"] = item.Rating;
+
+                    resp->setStatusCode(drogon::k200OK);
+                    resp->setContentTypeCode(drogon::CT_APPLICATION_JSON);
+                    resp->setBody(jItem.toStyledString());
+                    callback(resp);
+                    return;
+                }
+                else {
+                    resp->setStatusCode(drogon::k404NotFound);
+                    resp->setBody("no such item");  
+                    callback(resp);
+                    return;
+                }
+            }, 
+            [resp, callback](const drogon::orm::DrogonDbException &e) {
+                std::cerr << "error:" << e.base().what() << std::endl;
+                resp->setStatusCode(drogon::k500InternalServerError);
+                resp->setBody("db error");
                 callback(resp);
-                return;
-            }
-            else {
-                resp->setStatusCode(drogon::k404NotFound);
-                resp->setBody("no such item");  
-                callback(resp);
-                return;
-            }
-        }, 
-        [resp, callback](const drogon::orm::DrogonDbException &e) {
-            std::cerr << "error:" << e.base().what() << std::endl;
-            resp->setStatusCode(drogon::k500InternalServerError);
-            resp->setBody("db error");
-            callback(resp);
 
-            return;
-        }, 
-        itemId
-    );
+                return;
+            }, 
+            itemId
+        );
+    }
 }
 
 void ItemHandler::HandlerAddItem_temporary (const drogon::HttpRequestPtr &req, 
