@@ -17,5 +17,5 @@ public:
         const drogon::orm::DbClientPtr &);
 
     static void HandlerUpdItem (const drogon::HttpRequestPtr &, std::function<void (const drogon::HttpResponsePtr &)> &&,
-        const drogon::orm::DbClientPtr &);
+        const drogon::orm::DbClientPtr &, const std::string &);
 };

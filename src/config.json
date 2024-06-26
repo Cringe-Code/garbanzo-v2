@@ -1,8 +1,0 @@
-{
-    "cache": {
-        "item_cache": { 
-            "CacheCapacity": 1000, 
-            "CacheTimeout": 60     
-        }
-    }
-}

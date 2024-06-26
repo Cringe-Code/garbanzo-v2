@@ -30,37 +30,34 @@ public:
         return token;
     }
 
-    inline std::pair<std::string, std::string> update_tokens (const std::string &deviceId, const drogon::orm::DbClientPtr &dbClient) {
+    inline std::pair<Tokens, std::string> update_tokens (const std::string &deviceId, const drogon::orm::DbClientPtr &dbClient) {
         Tokens t = {
             Access,
             Refresh
         };
 
         auto val = validate_access_token(t.Access);
+        auto val1 = validate_refresh_token(t.Refresh, dbClient, deviceId);
 
         if (val.first) {
-            return {Access, Refresh};
+            return {{Access, Refresh}, val1.second};
         }
         else {
-            val = validate_refresh_token(t.Refresh, dbClient, deviceId);
-
-            if (!val.first) { // если refresh token невалидный, то юзер не получит новую пару токенов
-                return {"", ""};
+            if (!val1.first) { // если refresh token невалидный, то юзер не получит новую пару токенов
+                return {{"", ""}, ""};
             }
-
-            std::string new_refresh = generate_jwt_refresh_token(val.second, deviceId);
             std::string new_access = generate_jwt_access_token();
 
-            dbClient->execSqlSync("update tokens set hash_refresh_token=$1, hash_access_token=$2 where user_id=$3", 
-                bcrypt::generateHash(new_refresh), bcrypt::generateHash(new_access), val.second);
+            dbClient->execSqlSync("update tokens set refresh_token=$1 where user_id=$2", 
+                bcrypt::generateHash(t.Refresh), val1.second);
 
-            return {new_access, new_refresh};
+            return {{new_access, t.Refresh}, val1.second};
         }
     }
 
-private:
     std::string Access;
     std::string Refresh;
+private:
 
     static std::pair<bool, std::string> validate_access_token (std::string &access_token) {
         auto verifier = jwt::verify()

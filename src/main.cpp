@@ -51,6 +51,15 @@ int32_t main() {
     );
 
     drogon::app().registerHandler(
+        "/item/{item_name}",
+        [&dbClient](const drogon::HttpRequestPtr &req, std::function<void(const drogon::HttpResponsePtr &)> &&callback, 
+            std::string item_id) {
+            ItemHandler::HandlerUpdItem(req, std::move(callback), dbClient, item_id);
+        },
+        {drogon::Patch}
+    );
+
+    drogon::app().registerHandler(
         "/test",
         [&dbClient](const drogon::HttpRequestPtr &req, std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
             ItemHandler::HandlerAddItem_temporary(req, std::move(callback), dbClient);
