@@ -11,7 +11,7 @@
 class ItemHandler {
 public:
     static void HandlerGetItemMini (const drogon::HttpRequestPtr &, std::function<void (const drogon::HttpResponsePtr &)> &&,
-        const drogon::orm::DbClientPtr &, const std::string &, MyCache<Item>&);
+        const drogon::orm::DbClientPtr &, const std::string &, std::shared_ptr<MyCache<Item>>);
     
     static void HandlerAddItem_temporary (const drogon::HttpRequestPtr &, std::function<void (const drogon::HttpResponsePtr &)> &&,
         const drogon::orm::DbClientPtr &);

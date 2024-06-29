@@ -23,18 +23,20 @@ private:
 };
 
 template <typename T>
-void MyCache<T>::insert(T &x, const std::string &id) {
-    mp[id] = x;
-    ++Sz;
-
-    if (Sz > MaxSize) {
-        mp.erase(mp.begin());
-    }
+bool MyCache<T>::exists(const std::string &id) {
+    return mp.find(id) != mp.end();
 }
 
 template <typename T>
-bool MyCache<T>::exists(const std::string &id) {
-    return mp.find(id) != mp.end();
+void MyCache<T>::insert(T &x, const std::string &id) {
+    if (!exists(id)) {
+        mp[id] = x;
+        ++Sz;
+
+        if (Sz > MaxSize) {
+            mp.erase(mp.begin());
+        }
+    }
 }
 
 template <typename T>

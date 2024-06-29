@@ -9,7 +9,8 @@
 
 class Tokens {
 public:
-    Tokens(std::string access = "", std::string refresh = "") : Access(access), Refresh(refresh) 
+    Tokens(std::string access = "", std::string refresh = "") 
+    : Access(std::move(access)), Refresh(std::move(refresh)) 
     {}
 
     static std::string generate_jwt_access_token () {

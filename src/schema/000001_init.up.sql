@@ -22,3 +22,11 @@ create table if not exists item (
     cost bigint,
     rating bigint
 );
+
+create table if not exists in_cart (
+    user_id bigint,
+    item_id text,
+    count bigint,
+    foreign key (user_id) references users(id),
+    foreign key (item_id) references item(id)
+);

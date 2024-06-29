@@ -2,6 +2,7 @@
 #include <drogon/drogon.h>
 #include <drogon/orm/DbClient.h>
 #include <functional>
+#include <memory>
 #include <ostream>
 #include "Base.h"
 #include "reg_auth/Handlers.h"
@@ -23,8 +24,8 @@ int32_t main() {
 
     auto dbClient = drogon::orm::DbClient::newPgClient(POSTGRES_CONN, 1);
     
-    MyCache<Item> itemCache(100);
-    
+    std::shared_ptr<MyCache<Item>> itemCache = std::make_shared<MyCache<Item>>(100);
+
     drogon::app().registerHandler(
         "/register",
         [&dbClient](const drogon::HttpRequestPtr &req, std::function<void(const drogon::HttpResponsePtr &)> &&callback) {

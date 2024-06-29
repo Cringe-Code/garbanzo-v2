@@ -6,23 +6,23 @@
 #include "drogon/HttpResponse.h"
 #include "drogon/HttpTypes.h"
 #include "drogon/orm/Result.h"
-#include "trantor/utils/Logger.h"
+#include "drogon/utils/FunctionTraits.h"
 #include <drogon/CacheMap.h>
 #include <memory>
-
+#include <utility>
 
 #include "Handlers.h"
 
 void ItemHandler::HandlerGetItemMini (const drogon::HttpRequestPtr &req, 
     std::function<void (const drogon::HttpResponsePtr &)> &&callback,
-const drogon::orm::DbClientPtr &dbClient, const std::string &item_id, MyCache<Item> &itemCache) {
+const drogon::orm::DbClientPtr &dbClient, const std::string &item_id, std::shared_ptr<MyCache<Item>> itemCache) {
 
     auto itemId = item_id;
 
     auto resp = drogon::HttpResponse::newHttpResponse();
 
-    if (itemCache.exists(item_id)) {
-        Item item = itemCache.get(item_id);
+    if (itemCache->exists(item_id)) {
+        Item item = itemCache->get(item_id);
 
         Json::Value jItem;
         jItem["title"] = item.Title,
@@ -39,9 +39,10 @@ const drogon::orm::DbClientPtr &dbClient, const std::string &item_id, MyCache<It
     }
     else {
         dbClient->execSqlAsync("select title, preview_link, weight, cost, rating from item where id=$1" , 
-            [resp, callback, &itemCache, item_id](const drogon::orm::Result &r) {
+            [resp = std::move(resp), callback = std::move(callback), 
+                itemCache = std::move(itemCache), item_id = std::move(item_id)]
+            (const drogon::orm::Result &r) {
                 if (r.size() > 0) {
-
                     Item item (
                         r[0][0].as<std::string>(),
                         "",
@@ -50,8 +51,8 @@ const drogon::orm::DbClientPtr &dbClient, const std::string &item_id, MyCache<It
                         r[0][3].as<int64_t>(),
                         r[0][4].as<int64_t>()
                     );
-                    
-                    itemCache.insert(item, item_id);
+
+                    itemCache->insert(item, item_id);
 
                     Json::Value jItem;
                     jItem["title"] = item.Title,
@@ -68,7 +69,7 @@ const drogon::orm::DbClientPtr &dbClient, const std::string &item_id, MyCache<It
                 }
                 else {
                     resp->setStatusCode(drogon::k404NotFound);
-                    resp->setBody("no such item");  
+                    resp->setBody("no such item");
                     callback(resp);
                     return;
                 }
