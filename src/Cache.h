@@ -5,7 +5,6 @@
 #include <string>
 #include <unordered_map>
 
-
 template <typename T>
 class MyCache {
 public:

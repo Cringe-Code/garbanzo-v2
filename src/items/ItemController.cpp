@@ -5,19 +5,22 @@
 #include "Tokens.h"
 #include "drogon/HttpResponse.h"
 #include "drogon/HttpTypes.h"
+#include "drogon/orm/Exception.h"
 #include "drogon/orm/Result.h"
 #include "drogon/utils/FunctionTraits.h"
 #include <drogon/CacheMap.h>
 #include <memory>
 #include <utility>
 
-#include "Handlers.h"
+#include "ItemController.h"
 
-void ItemHandler::HandlerGetItemMini (const drogon::HttpRequestPtr &req, 
+void ItemController::HandlerGetItemMini (const drogon::HttpRequestPtr &req, 
     std::function<void (const drogon::HttpResponsePtr &)> &&callback,
-const drogon::orm::DbClientPtr &dbClient, const std::string &item_id, std::shared_ptr<MyCache<Item>> itemCache) {
+const std::string &item_id) {
 
-    auto itemId = item_id;
+    auto dbClient = drogon::app().getDbClient("postgres");
+
+    const std::string itemId = item_id;
 
     auto resp = drogon::HttpResponse::newHttpResponse();
 
@@ -38,7 +41,7 @@ const drogon::orm::DbClientPtr &dbClient, const std::string &item_id, std::share
         return;
     }
     else {
-        dbClient->execSqlAsync("select title, preview_link, weight, cost, rating from item where id=$1" , 
+        dbClient->execSqlAsync("select title, preview_link, weight, cost, rating from item where id=$1", 
             [resp = std::move(resp), callback = std::move(callback), 
                 itemCache = std::move(itemCache), item_id = std::move(item_id)]
             (const drogon::orm::Result &r) {
@@ -87,9 +90,11 @@ const drogon::orm::DbClientPtr &dbClient, const std::string &item_id, std::share
     }
 }
 
-void ItemHandler::HandlerAddItem_temporary (const drogon::HttpRequestPtr &req, 
-    std::function<void (const drogon::HttpResponsePtr &)> &&callback,
-const drogon::orm::DbClientPtr &dbClient) {
+void ItemController::HandlerAddItem_temporary (const drogon::HttpRequestPtr &req, 
+    std::function<void (const drogon::HttpResponsePtr &)> &&callback) {
+
+    auto dbClient = drogon::app().getDbClient("postgres");
+    
     auto json = req->jsonObject();
 
     Item item(
@@ -113,9 +118,11 @@ const drogon::orm::DbClientPtr &dbClient) {
     callback(resp);
 }  
 
-void ItemHandler::HandlerUpdItem (const drogon::HttpRequestPtr &req, 
+void ItemController::HandlerUpdItem (const drogon::HttpRequestPtr &req, 
     std::function<void (const drogon::HttpResponsePtr &)> &&callback,
-const drogon::orm::DbClientPtr &dbClient, const std::string &item_id) {
+const std::string &item_id) {
+
+    auto dbClient = drogon::app().getDbClient("postgres");
 
     auto itemId = item_id;
     
@@ -226,4 +233,68 @@ const drogon::orm::DbClientPtr &dbClient, const std::string &item_id) {
         }, 
         userId
     );
+}
+
+void ItemController::HandlerGetItemFull(const drogon::HttpRequestPtr &req, 
+    std::function<void (const drogon::HttpResponsePtr &)> && callback, 
+const std::string &item_id) {
+
+    auto dbClient = drogon::app().getDbClient("postgres");
+
+    const std::string itemId = item_id;
+
+    auto resp = drogon::HttpResponse::newHttpResponse();
+
+    if (itemCache->exists(itemId)) {
+        Item item = itemCache->get(itemId);
+
+        Json::Value jItem;
+        jItem["title"] = item.Title;
+        jItem["previewLink"] = item.PreviewLink;
+        jItem["description"] = item.Description;
+        jItem["weight"] = item.Weight;
+        jItem["cost"] = item.Cost;
+        jItem["rating"] = item.Rating;
+
+        resp->setStatusCode(drogon::k200OK);
+        resp->setBody(jItem.toStyledString());
+        resp->setContentTypeCode(drogon::CT_APPLICATION_JSON);
+
+        callback(resp);
+    }
+    else {
+        dbClient->execSqlAsync("select * from item where id=$1", 
+        [resp = std::move(resp), callback = std::move(callback)](const drogon::orm::Result &r) {
+            if (r.size() > 0) {
+                Json::Value jItem;
+                jItem["title"] = r[0][1].as<std::string>();
+                jItem["previewLink"] = r[0][2].as<std::string>();
+                jItem["description"] = r[0][3].as<std::string>();
+                jItem["weight"] = r[0][4].as<std::string>();
+                jItem["cost"] = r[0][5].as<std::string>();
+                jItem["rating"] = r[0][6].as<std::string>();
+
+                resp->setStatusCode(drogon::k200OK);
+                resp->setBody(jItem.toStyledString());
+                resp->setContentTypeCode(drogon::CT_APPLICATION_JSON);
+
+                callback(resp);
+            }
+            else {
+                resp->setStatusCode(drogon::k404NotFound);
+                resp->setBody("no such item");
+
+                callback(resp);
+                return;
+            }
+        }, 
+        [resp, callback](const drogon::orm::DrogonDbException &e) {
+            std::cout << e.base().what() << std::endl;
+
+            resp->setStatusCode(drogon::k500InternalServerError);
+            resp->setBody("db error1");
+            callback(resp);
+        }, 
+        itemId);
+    }
 }

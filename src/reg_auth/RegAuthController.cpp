@@ -10,11 +10,13 @@
 #include <json/value.h>
 #include <string>
 
-#include "Handlers.h"
+#include "RegAuthController.h"
 
-void RegAuthHandler::HandlerRegister (const drogon::HttpRequestPtr &req, 
-    std::function<void (const drogon::HttpResponsePtr &)> &&callback,
-const drogon::orm::DbClientPtr &dbClient) {
+void RegAuthController::HandlerRegister (const drogon::HttpRequestPtr &req, 
+std::function<void (const drogon::HttpResponsePtr &)> &&callback) {
+
+    auto dbClient = drogon::app().getDbClient("postgres");
+
     auto json = req->jsonObject();
     
     User newUser(
@@ -86,9 +88,11 @@ const drogon::orm::DbClientPtr &dbClient) {
     newUser.Login);
 }
 
-void RegAuthHandler::HandlerAuth (const drogon::HttpRequestPtr &req, 
-    std::function<void (const drogon::HttpResponsePtr &)> &&callback, 
-const drogon::orm::DbClientPtr &dbClient) {
+void RegAuthController::HandlerAuth (const drogon::HttpRequestPtr &req, 
+std::function<void (const drogon::HttpResponsePtr &)> &&callback) {
+
+    auto dbClient = drogon::app().getDbClient("postgres");
+
     auto json = req->jsonObject();
 
     User authUser(
