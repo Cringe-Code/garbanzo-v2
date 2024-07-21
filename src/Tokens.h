@@ -93,18 +93,27 @@ private:
             std::cerr << "Error while check refresh token: " << exc.what() << "\n";
             return {false, ""};
         }
-        
+
         auto user_id = decoded_jwt.get_payload_claim("user_id").as_string();
 
         auto rows = dbClient->execSqlSync("select refresh_token from tokens where user_id=$1 and device_id=$2", 
             user_id, deviceId);
-        std::string db_hash_token = rows[0][0].as<std::string>();
-        
-        // валидация токена (не пароля) просто бкрипт тупо назвал свои функции
-        if (!bcrypt::validatePassword(refresh_token, db_hash_token)) {
+
+        if (rows.size() > 0) {
+            std::string db_hash_token = rows[0][0].as<std::string>();
+
+            if (!validateToken(refresh_token, db_hash_token)) {
+                return {false, ""};
+            }
+
+            return {true, user_id};
+        }
+        else {
             return {false, ""};
         }
-        return {true, user_id};
+    }
+
+    static bool validateToken (std::string token, std::string hashToken) {
+        return bcrypt::validatePassword(token, hashToken);
     }
 };
-

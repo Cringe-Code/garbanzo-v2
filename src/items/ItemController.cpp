@@ -125,11 +125,10 @@ const std::string &item_id) {
     auto dbClient = drogon::app().getDbClient("postgres");
 
     auto itemId = item_id;
-    
+
     auto json = req->jsonObject();
-
     auto jsonItem = (*json)["item"];
-
+    
     Item item(
         jsonItem["title"].as<std::string>(),
         jsonItem["description"].as<std::string>(),
@@ -146,6 +145,7 @@ const std::string &item_id) {
     );
 
     std::string deviceId = (*json)["deviceId"].as<std::string>();
+
     auto newTokens = tokens.update_tokens(deviceId, dbClient);
 
     auto resp = drogon::HttpResponse::newHttpResponse();
@@ -169,6 +169,7 @@ const std::string &item_id) {
                             "from item where id=$1",
                             [newTokens, resp, callback](const drogon::orm::Result &row) {
                                 if (row.size() > 0) {
+
                                     Json::Value jItem;
                                     jItem["title"] = row[0][0].as<std::string>(),
                                     jItem["description"] = row[0][1].as<std::string>(),
@@ -218,8 +219,15 @@ const std::string &item_id) {
                     item.Title, item.PreviewLink, item.Description, item.Weight, item.Cost, itemId);
                 }
                 else {
+                    // если пользователь не может менять товар, все равно обновить токены если нужно
+                    Json::Value jToken;
+                    jToken["access"] = newTokens.first.Access;
+                    jToken["refresh"] = newTokens.first.Refresh;
+
                     resp->setStatusCode(drogon::k403Forbidden);
-                    resp->setBody("user is not an admin");
+                    resp->setContentTypeCode(drogon::CT_APPLICATION_JSON);
+                    resp->setBody(jToken.toStyledString());
+
                     callback(resp);
                     return;
                 }

@@ -1,8 +1,8 @@
 create table if not exists users (
     id serial primary key,
-    login text,
-    phone text,
-    email text,
+    login text unique,
+    phone text unique,
+    email text unique,
     hash_password text,
     is_admin boolean
 );

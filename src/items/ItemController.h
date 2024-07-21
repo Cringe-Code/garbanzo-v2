@@ -18,6 +18,8 @@ public:
 
     METHOD_ADD(ItemController::HandlerGetItemMini, "/m/{item_id}", drogon::Get);
     METHOD_ADD(ItemController::HandlerGetItemFull, "/f/{item_id}", drogon::Get);
+
+    // for test add item
     METHOD_ADD(ItemController::HandlerAddItem_temporary, "/test", drogon::Post);
     METHOD_ADD(ItemController::HandlerUpdItem, "/upd/{item_id}", drogon::Patch);
     // METHOD_ADD(ItemController::HandlerMarkFavourite, "/mark/{item_id}", drogon::Post);

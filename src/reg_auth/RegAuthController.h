@@ -23,5 +23,5 @@ public:
 
     static void HandlerAuth (const drogon::HttpRequestPtr &req, 
         std::function<void (const drogon::HttpResponsePtr &)> &&callback);
-
+        
 };

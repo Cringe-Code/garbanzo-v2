@@ -35,8 +35,9 @@ std::function<void (const drogon::HttpResponsePtr &)> &&callback) {
         return;
     }
 
-    dbClient->execSqlAsync("select count(*) from users where login=$1",
-        [newUser, resp, callback, dbClient](const drogon::orm::Result &r) {
+    dbClient->execSqlAsync("select count(*) from users where login=$1 or email=$2 or phone=$3",
+        [newUser, resp = std::move(resp), callback = std::move(callback), dbClient]
+        (const drogon::orm::Result &r) {
             if (r.size() > 0) {
                 int count = r[0]["count"].as<int>();
                 if (count > 0) {
@@ -47,7 +48,8 @@ std::function<void (const drogon::HttpResponsePtr &)> &&callback) {
                 }
                 else {
                     dbClient->execSqlAsync("insert into users (login, email, hash_password) values ($1, $2, $3)", 
-                        [callback, resp, newUser](const drogon::orm::Result &result) {
+                        [callback = std::move(callback), resp = std::move(resp), newUser]
+                        (const drogon::orm::Result &result) {
                             if (result.affectedRows() > 0) {
                                 Json::Value jUser;
                                 jUser["login"] = newUser.Login;
@@ -85,7 +87,8 @@ std::function<void (const drogon::HttpResponsePtr &)> &&callback) {
         [](const drogon::orm::DrogonDbException &e) {
             std::cerr << "error:" << e.base().what() << std::endl;
         },
-    newUser.Login);
+    newUser.Login, newUser.Email, newUser.Phone);
+  
 }
 
 void RegAuthController::HandlerAuth (const drogon::HttpRequestPtr &req, 
@@ -117,7 +120,6 @@ std::function<void (const drogon::HttpResponsePtr &)> &&callback) {
 
     if (status == 0) {
         resp->setStatusCode(drogon::k500InternalServerError);
-        resp->setBody("aboba");
         callback(resp);
         return;
     }
